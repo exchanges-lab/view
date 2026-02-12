@@ -1,0 +1,6 @@
+[submodule "references/binance-rust"]
+	path = references/binance-rust
+	url = https://github.com/binance/binance-connector-rust.git
+[submodule "references/library"]
+	path = references/library
+	url = https://github.com/JuliusMutugu/charting_library-master.git
