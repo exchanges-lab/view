@@ -1,6 +1,7 @@
 # 📊 View — Crypto chart Platform
 
 [🇨🇳 中文版 README](README_CN.md)
+
 A self-hosted, real-time cryptocurrency data collection and visualization platform for **Binance USDS-M Futures**. Combines a high-performance Rust backend with a professional charting frontend to deliver institutional-grade market data tooling.
 
 This project is primarily built for my own use, and I don't have much bandwidth to maintain it. I'm also not a frontend developer, so the frontend code may not follow best practices. That said, pull requests and issues are very welcome — feel free to open an Issue or submit a Pull Request!
