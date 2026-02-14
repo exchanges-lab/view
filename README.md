@@ -28,7 +28,7 @@ If deploying the backend is too difficult, you can temporarily use my public bac
 - [x] **Professional charting engine** — Full indicator and drawing tool support
 - [x] **Custom indicators** — Net Volume (NV-C) and Cumulative Volume Delta (CVD-C)
 - [x] **Multi-chart layouts** — Single, vertical split, horizontal split, and 1L+2R layouts with draggable dividers
-- [x] **Canvas persistence** — Named drawing canvases per symbol, with auto-save every 5 minutes
+- [x] **Chart save/load** — Built-in save/load via `save_load_adapter` (metadata in localStorage, chart content in backend API), with auto-save
 - [x] **Dark & Light themes** — Full theme toggle synced across widget and UI
 
 ### Watchlist & Interaction

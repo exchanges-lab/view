@@ -1,4 +1,4 @@
-window.API_CONFIG = { baseUrl: 'https://xxx.xxx.com' };
+window.API_CONFIG = { baseUrl: 'https://api-view.cathiefish.org' };
 
 /**
  * Google OAuth Configuration
@@ -9,7 +9,7 @@ window.API_CONFIG = { baseUrl: 'https://xxx.xxx.com' };
 const AUTH_CONFIG = {
     // Client ID obtained from GCP Console
     // Replace with your actual Client ID
-    clientId: 'xxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com',
+    clientId: '136939086552-bt28icv34nucmjna8hfndr6bopr5qcp4.apps.googleusercontent.com',
 
     // Authentication success callback
     onSuccess: (user) => {

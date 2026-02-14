@@ -693,109 +693,6 @@
             flex-shrink: 0;
         }
 
-        /* Canvas Selector Popup */
-        .canvas-selector-popup {
-            display: none;
-            position: fixed;
-            background: var(--tv-color-pane-background);
-            border: 1px solid var(--tv-color-border);
-            border-radius: 8px;
-            padding: 12px 16px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-            z-index: 1000;
-            min-width: 200px;
-        }
-
-        .canvas-selector-popup.is-open {
-            display: block;
-        }
-
-        .canvas-selector-title {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--tv-color-text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-        }
-
-        .canvas-list {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-
-        .canvas-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            color: var(--tv-color-text);
-        }
-
-        .canvas-item:hover {
-            background: var(--tv-color-toolbar-button-background-hover);
-        }
-
-        .canvas-item.is-active {
-            background: rgba(41, 98, 255, 0.15);
-            color: var(--tv-color-blue);
-        }
-
-        .canvas-item-name {
-            flex: 1;
-        }
-
-        .canvas-item-delete {
-            opacity: 0;
-            color: var(--tv-color-text-secondary);
-            padding: 2px 6px;
-            border-radius: 3px;
-        }
-
-        .canvas-item:hover .canvas-item-delete {
-            opacity: 1;
-        }
-
-        .canvas-item-delete:hover {
-            background: rgba(255, 0, 0, 0.2);
-            color: #ff5252;
-        }
-
-        .canvas-actions {
-            display: flex;
-            gap: 8px;
-            border-top: 1px solid var(--tv-color-border);
-            padding-top: 10px;
-        }
-
-        .canvas-btn {
-            flex: 1;
-            padding: 6px 12px;
-            border: 1px solid var(--tv-color-border);
-            border-radius: 4px;
-            background: transparent;
-            color: var(--tv-color-text);
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .canvas-btn:hover {
-            background: var(--tv-color-toolbar-button-background-hover);
-        }
-
-        .canvas-btn.primary {
-            background: var(--tv-color-blue);
-            border-color: var(--tv-color-blue);
-            color: #fff;
-        }
-
-        .canvas-btn.primary:hover {
-            background: #1e53e4;
-        }
-
         /* Charts Layout Container */
         .charts-layout {
             display: flex;
@@ -1106,21 +1003,6 @@
                         </path>
                     </svg>
                 </button>
-                <button class="toolbar-button" id="btnCanvas" onclick="toggleCanvasSelector()" title="Canvas Selector">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="44" height="44"
-                        fill="currentColor">
-                        <g clip-path="url(#a)">
-                            <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"
-                                d="M22 8a14 14 0 1 0 0 28 14 14 0 0 0 0-28ZM9 22a13 13 0 0 1 22.03-9.35L27.5 16.2a8 8 0 1 0 .68.73l3.55-3.55A13 13 0 1 1 9 22Zm17.79-5.1a7 7 0 1 0 .68.74l-3.62 3.6A2 2 0 0 1 22 24a2 2 0 1 1 1.25-3.56l3.54-3.54Z">
-                            </path>
-                        </g>
-                        <defs>
-                            <clipPath id="a">
-                                <path fill="currentColor" d="M0 0h44v44H0z"></path>
-                            </clipPath>
-                        </defs>
-                    </svg>
-                </button>
                 <div class="toolbar-spacer"></div>
                 <button class="toolbar-button" id="btnTheme" onclick="toggleTheme()" title="Toggle Theme">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="44" height="44" fill="none">
@@ -1173,15 +1055,6 @@
                 </div>
             </div>
 
-            <!-- Canvas Selector Popup -->
-            <div class="canvas-selector-popup" id="canvasSelector">
-                <div class="canvas-selector-title">Canvas: <span id="canvasSymbol">-</span></div>
-                <div class="canvas-list" id="canvasList"></div>
-                <div class="canvas-actions">
-                    <button class="canvas-btn" onclick="newCanvas()">New</button>
-                    <button class="canvas-btn primary" onclick="saveCanvas()">Save</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -2069,239 +1942,138 @@
             selector.classList.toggle('is-open', isLayoutSelectorOpen);
         }
 
-        // ============ Canvas Selector ============
-        let isCanvasSelectorOpen = false;
-        let currentCanvasNames = {}; // { chartIndex: canvasName }
-
-        function toggleCanvasSelector() {
-            isCanvasSelectorOpen = !isCanvasSelectorOpen;
-            const selector = document.getElementById('canvasSelector');
-            const btn = document.getElementById('btnCanvas');
-
-            if (isCanvasSelectorOpen) {
-                const btnRect = btn.getBoundingClientRect();
-                selector.style.right = (window.innerWidth - btnRect.left + 8) + 'px';
-                selector.style.top = btnRect.top + 'px';
-                loadCanvasList();
-            }
-
-            selector.classList.toggle('is-open', isCanvasSelectorOpen);
-        }
-
+        // ============ Save/Load Adapter ============
         function getAuthHeaders() {
             const user = getAuthUser();
             return user ? { 'X-User-Id': user.sub } : {};
         }
 
-        async function loadCanvasList() {
-            const widget = tvWidgets[selectedChartIndex];
-            if (!widget) return;
+        function createSaveLoadAdapter() {
+            const CHARTS_INDEX_KEY = 'tv_charts_index';
+            const STUDY_TPL_KEY = 'tv_study_templates';
+            const DRAWING_TPL_KEY = 'tv_drawing_templates';
+            const CHART_TPL_KEY = 'tv_chart_templates';
 
-            const symbol = widget.activeChart().symbol();
-            document.getElementById('canvasSymbol').textContent = symbol;
+            function getStore(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
+            function setStore(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+            function getStoreObj(key) { return JSON.parse(localStorage.getItem(key) || '{}'); }
+            function setStoreObj(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
-            try {
-                const res = await fetch(`${getApiBaseUrl()}/canvas/list?symbol=${symbol}`, {
-                    headers: getAuthHeaders()
-                });
-                const data = await res.json();
-                renderCanvasList(data.canvases, symbol);
-            } catch (e) {
-                console.error('Failed to load canvas list:', e);
-            }
-        }
+            let nextId = Date.now();
 
-        function renderCanvasList(canvases, symbol) {
-            const list = document.getElementById('canvasList');
-            const currentName = currentCanvasNames[selectedChartIndex] || 'default';
+            return {
+                getAllCharts() {
+                    return Promise.resolve(getStore(CHARTS_INDEX_KEY));
+                },
 
-            if (canvases.length === 0) {
-                list.innerHTML = '<div style="color:var(--tv-color-text-secondary);padding:8px;">No saved canvases</div>';
-                return;
-            }
+                saveChart(chartData) {
+                    const index = getStore(CHARTS_INDEX_KEY);
+                    const id = chartData.id || nextId++;
+                    const content = chartData.content;
+                    const symbol = chartData.symbol;
+                    const name = chartData.name;
 
-            list.innerHTML = canvases.map(name => `
-                <div class="canvas-item ${name === currentName ? 'is-active' : ''}" onclick="loadCanvas('${symbol}', '${name}')">
-                    <span class="canvas-item-name">${symbol}_${name}</span>
-                    <span class="canvas-item-delete" onclick="event.stopPropagation();deleteCanvas('${symbol}','${name}')">✕</span>
-                </div>
-            `).join('');
-        }
+                    const existing = index.findIndex(c => c.id === id);
+                    const meta = { id, name, symbol, resolution: chartData.resolution, timestamp: Math.floor(Date.now() / 1000) };
+                    if (existing >= 0) index[existing] = meta;
+                    else index.push(meta);
+                    setStore(CHARTS_INDEX_KEY, index);
 
-        async function loadCanvas(symbol, name) {
-            const widget = tvWidgets[selectedChartIndex];
-            if (!widget) return;
-
-            try {
-                const res = await fetch(`${getApiBaseUrl()}/canvas/load?symbol=${symbol}&name=${name}`, {
-                    headers: getAuthHeaders()
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    widget.load(data);
-                    // Force background color after load
-                    widget.applyOverrides({
-                        "paneProperties.background": "#0F0F0F",
-                        "paneProperties.backgroundType": "solid",
-                        "scalesProperties.backgroundColor": "#0F0F0F"
-                    });
-                    currentCanvasNames[selectedChartIndex] = name;
-                    // Remember the canvas name used by this symbol
-                    saveLastCanvasName(symbol, name);
-                    toggleCanvasSelector();
-                }
-            } catch (e) {
-                console.error('Failed to load canvas:', e);
-            }
-        }
-
-        async function saveCanvas() {
-            const widget = tvWidgets[selectedChartIndex];
-            if (!widget) return;
-
-            const symbol = widget.activeChart().symbol();
-            const name = currentCanvasNames[selectedChartIndex] || 'default';
-
-            widget.save(async (state) => {
-                try {
-                    const res = await fetch(`${getApiBaseUrl()}/canvas/save`, {
+                    return fetch(`${getApiBaseUrl()}/canvas/save`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-                        body: JSON.stringify({ symbol, name, data: state })
-                    });
-                    if (res.ok) {
-                        // Save successful, remember the canvas name used by this symbol
-                        saveLastCanvasName(symbol, name);
-                        console.log(`Canvas saved: ${symbol}_${name}`);
-                        // Update auto-save state snapshot
-                        lastSavedStates[selectedChartIndex] = JSON.stringify(state);
-                        toggleCanvasSelector();
-                    } else {
-                        console.error('Failed to save canvas, status:', res.status);
-                        alert('Failed to save canvas. Please check server logs.');
-                    }
-                } catch (e) {
-                    console.error('Failed to save canvas:', e);
-                    alert('Failed to save canvas: ' + e.message);
-                }
-            });
-        }
+                        body: JSON.stringify({ symbol, name: String(id), data: JSON.parse(content) })
+                    }).then(() => id);
+                },
 
-        // Auto-save related
-        let lastSavedStates = {};
-
-        async function autoSaveCanvas(index) {
-            const widget = tvWidgets[index];
-            if (!widget) return;
-
-            const symbol = widget.activeChart().symbol();
-            const name = currentCanvasNames[index] || 'default';
-
-            widget.save(async (state) => {
-                const stateStr = JSON.stringify(state);
-                if (lastSavedStates[index] === stateStr) return; // No changes
-
-                try {
-                    const res = await fetch(`${getApiBaseUrl()}/canvas/save`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-                        body: JSON.stringify({ symbol, name, data: state })
-                    });
-                    if (res.ok) {
-                        lastSavedStates[index] = stateStr;
-                        saveLastCanvasName(symbol, name);
-                        console.log(`Auto-saved: ${symbol}_${name}`);
-                    }
-                } catch (e) {
-                    console.error('Auto-save failed:', e);
-                }
-            });
-        }
-
-        function startAutoSave() {
-            setInterval(() => {
-                tvWidgets.forEach((_, index) => autoSaveCanvas(index));
-            }, 5 * 60 * 1000); // 5 minutes
-        }
-
-        // Save the last used canvas name for each symbol
-        function saveLastCanvasName(symbol, name) {
-            try {
-                const key = 'lastCanvasNames';
-                const data = JSON.parse(localStorage.getItem(key) || '{}');
-                data[symbol.toUpperCase()] = name;
-                localStorage.setItem(key, JSON.stringify(data));
-            } catch (e) {
-                console.error('Failed to save last canvas name:', e);
-            }
-        }
-
-        // Get the last used canvas name for a symbol
-        function getLastCanvasName(symbol) {
-            try {
-                const key = 'lastCanvasNames';
-                const data = JSON.parse(localStorage.getItem(key) || '{}');
-                return data[symbol.toUpperCase()] || null;
-            } catch (e) {
-                return null;
-            }
-        }
-
-        // Auto-load the last saved canvas
-        async function autoLoadCanvas(widget, index) {
-            const symbol = widget.activeChart().symbol();
-            const lastName = getLastCanvasName(symbol);
-
-            if (lastName) {
-                try {
-                    const res = await fetch(`${getApiBaseUrl()}/canvas/load?symbol=${symbol}&name=${lastName}`, {
+                getChartContent(chartId) {
+                    const index = getStore(CHARTS_INDEX_KEY);
+                    const chart = index.find(c => c.id == chartId);
+                    if (!chart) return Promise.reject('Chart not found');
+                    return fetch(`${getApiBaseUrl()}/canvas/load?symbol=${chart.symbol}&name=${chartId}`, {
                         headers: getAuthHeaders()
-                    });
-                    if (res.ok) {
-                        const data = await res.json();
-                        widget.load(data);
-                        widget.applyOverrides({
-                            "paneProperties.background": "#0F0F0F",
-                            "paneProperties.backgroundType": "solid",
-                            "scalesProperties.backgroundColor": "#0F0F0F"
-                        });
-                        currentCanvasNames[index] = lastName;
-                        console.log(`Auto-loaded canvas: ${symbol}_${lastName}`);
+                    }).then(r => r.text());
+                },
+
+                removeChart(id) {
+                    const index = getStore(CHARTS_INDEX_KEY);
+                    const chart = index.find(c => c.id == id);
+                    const newIndex = index.filter(c => c.id != id);
+                    setStore(CHARTS_INDEX_KEY, newIndex);
+                    if (chart) {
+                        return fetch(`${getApiBaseUrl()}/canvas/delete?symbol=${chart.symbol}&name=${id}`, {
+                            method: 'DELETE', headers: getAuthHeaders()
+                        }).then(() => {});
                     }
-                } catch (e) {
-                    console.log(`No saved canvas found for ${symbol}`);
-                }
-            }
-        }
+                    return Promise.resolve();
+                },
 
-        async function newCanvas() {
-            const widget = tvWidgets[selectedChartIndex];
-            if (!widget) return;
+                getAllStudyTemplates() { return Promise.resolve(getStore(STUDY_TPL_KEY)); },
+                saveStudyTemplate(data) {
+                    const list = getStore(STUDY_TPL_KEY);
+                    const existing = list.findIndex(t => t.name === data.name);
+                    if (existing >= 0) list[existing] = data;
+                    else list.push(data);
+                    setStore(STUDY_TPL_KEY, list);
+                    const contents = getStoreObj(STUDY_TPL_KEY + '_content');
+                    contents[data.name] = data.content;
+                    setStoreObj(STUDY_TPL_KEY + '_content', contents);
+                    return Promise.resolve();
+                },
+                removeStudyTemplate(info) {
+                    setStore(STUDY_TPL_KEY, getStore(STUDY_TPL_KEY).filter(t => t.name !== info.name));
+                    const contents = getStoreObj(STUDY_TPL_KEY + '_content');
+                    delete contents[info.name];
+                    setStoreObj(STUDY_TPL_KEY + '_content', contents);
+                    return Promise.resolve();
+                },
+                getStudyTemplateContent(info) {
+                    const contents = getStoreObj(STUDY_TPL_KEY + '_content');
+                    return Promise.resolve(contents[info.name] || '');
+                },
 
-            const symbol = widget.activeChart().symbol();
-            const name = await showInputModal('New Canvas Name', 'default', 'Enter canvas name...');
-            if (!name) return;
+                getDrawingTemplates(toolName) {
+                    const all = getStoreObj(DRAWING_TPL_KEY);
+                    return Promise.resolve(Object.keys(all[toolName] || {}));
+                },
+                loadDrawingTemplate(toolName, templateName) {
+                    const all = getStoreObj(DRAWING_TPL_KEY);
+                    return Promise.resolve((all[toolName] || {})[templateName] || '');
+                },
+                saveDrawingTemplate(toolName, templateName, content) {
+                    const all = getStoreObj(DRAWING_TPL_KEY);
+                    if (!all[toolName]) all[toolName] = {};
+                    all[toolName][templateName] = content;
+                    setStoreObj(DRAWING_TPL_KEY, all);
+                    return Promise.resolve();
+                },
+                removeDrawingTemplate(toolName, templateName) {
+                    const all = getStoreObj(DRAWING_TPL_KEY);
+                    if (all[toolName]) delete all[toolName][templateName];
+                    setStoreObj(DRAWING_TPL_KEY, all);
+                    return Promise.resolve();
+                },
 
-            currentCanvasNames[selectedChartIndex] = name;
-            await saveCanvas();
-            loadCanvasList();
-        }
-
-        async function deleteCanvas(symbol, name) {
-            if (!confirm(`Delete canvas "${symbol}_${name}"?`)) return;
-
-            try {
-                await fetch(`${getApiBaseUrl()}/canvas/delete?symbol=${symbol}&name=${name}`, {
-                    method: 'DELETE',
-                    headers: getAuthHeaders()
-                });
-                if (currentCanvasNames[selectedChartIndex] === name) {
-                    currentCanvasNames[selectedChartIndex] = 'default';
-                }
-                loadCanvasList();
-            } catch (e) {
-                console.error('Failed to delete canvas:', e);
-            }
+                getAllChartTemplates() {
+                    return Promise.resolve(Object.keys(getStoreObj(CHART_TPL_KEY)));
+                },
+                saveChartTemplate(name, content) {
+                    const all = getStoreObj(CHART_TPL_KEY);
+                    all[name] = content;
+                    setStoreObj(CHART_TPL_KEY, all);
+                    return Promise.resolve();
+                },
+                getChartTemplateContent(name) {
+                    const all = getStoreObj(CHART_TPL_KEY);
+                    return Promise.resolve({ content: all[name] || {} });
+                },
+                removeChartTemplate(name) {
+                    const all = getStoreObj(CHART_TPL_KEY);
+                    delete all[name];
+                    setStoreObj(CHART_TPL_KEY, all);
+                    return Promise.resolve();
+                },
+            };
         }
 
         function changeLayout(layout) {
@@ -2558,7 +2330,9 @@
                 fullscreen: false,
                 autosize: true,
                 theme: isDarkTheme ? "Dark" : "Light",
-                load_last_chart: false,
+                save_load_adapter: createSaveLoadAdapter(),
+                load_last_chart: true,
+                auto_save_delay: 5,
                 custom_indicators_getter: (PineJS) => {
                     window.PineJS = PineJS;
                     return Promise.resolve([NetVolumeIndicator, CVDIndicator]);
@@ -2647,9 +2421,6 @@
                 }
 
                 widget._ready = true;
-
-                // Auto-load the last saved canvas
-                autoLoadCanvas(widget, index);
             });
 
             tvWidgets[index] = widget;
@@ -2682,14 +2453,6 @@
                 }
             }
 
-            // Close canvas selector if clicking outside
-            if (isCanvasSelectorOpen) {
-                const canvasSelector = document.getElementById('canvasSelector');
-                const canvasBtn = document.getElementById('btnCanvas');
-                if (!canvasSelector.contains(e.target) && !canvasBtn.contains(e.target)) {
-                    toggleCanvasSelector();
-                }
-            }
         }
 
         // ============ Initialize Watchlist Event Listeners ============
@@ -2851,8 +2614,6 @@
             createWidget(0);
             selectChart(0);
 
-            // Start auto-save
-            startAutoSave();
         }
 
         // ============ Authentication Guard ============
@@ -2894,20 +2655,31 @@
         };
 
         async function initApp() {
-            const user = checkAuth();
-            if (!user) {
-                window.location.href = './login.html';
-                return;
+            // DEV_MODE: skip auth for local preview
+            const DEV_MODE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+            if (!DEV_MODE) {
+                const user = checkAuth();
+                if (!user) {
+                    window.location.href = './login.html';
+                    return;
+                }
+                console.log('Authenticated as:', user.email);
+            } else {
+                console.log('DEV_MODE: skipping auth');
             }
-
-            console.log('Authenticated as:', user.email);
 
             const backendReady = await waitForBackend();
             if (backendReady) {
                 await fetchDailyOpens();
                 init();
             } else {
-                alert('Backend server is not responding. Please ensure it is running.');
+                // In dev mode, still try to init even without backend
+                if (DEV_MODE) {
+                    console.warn('Backend not available, initializing anyway for preview');
+                    init();
+                } else {
+                    alert('Backend server is not responding. Please ensure it is running.');
+                }
             }
         }
 
