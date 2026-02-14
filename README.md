@@ -13,6 +13,7 @@ If deploying the backend is too difficult, you can temporarily use my public bac
 ![tv-1](https://img.cathiefish.art/ns/tv-1.png)
 ![tv-2](https://img.cathiefish.art/ns/tv-2.png)
 ![tv-3](https://img.cathiefish.art/ns/tv-3.png)
+![tv-3](https://img.cathiefish.art/ns/tv-4.png)
 
 ## ✨ Features
 
@@ -228,22 +229,23 @@ docker compose up -d
 
 Before building the frontend container, you need to configure authentication and API connection.
 
-**1. Configure Google OAuth — `auth-config.js`**
+**1. Configure `auth-config.js`**
 
 Since the frontend runs inside the Docker network, it accesses the backend via the **container name**:
 
 ```js
-// Use the backend container name as the hostname (internal Docker DNS)
 window.API_CONFIG = { baseUrl: 'http://backend:3000' };
 
 const AUTH_CONFIG = {
-    // Replace with your Google OAuth Client ID from GCP Console
     clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
     onSuccess: (user) => { console.log('Auth successful:', user.email); },
     onError: (error) => { console.error('Auth error:', error); }
 };
 window.AUTH_CONFIG = AUTH_CONFIG;
+window.ALLOWED_EMAILS = ['your-email@gmail.com'];
 ```
+
+Replace `clientId` with your Google OAuth Client ID from GCP Console, and `ALLOWED_EMAILS` with your email whitelist.
 
 To find the backend container IP (useful for debugging):
 
@@ -252,15 +254,7 @@ $ docker inspect backend --format '{{range .NetworkSettings.Networks}}{{.IPAddre
 172.18.0.3
 ```
 
-**2. Configure Email Whitelist — `login.html`**
-
-Add your Google account email to the whitelist:
-
-```js
-const allowedEmails = ['your-email@gmail.com'];
-```
-
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Google OAuth requires a Client ID from GCP Console. Tutorial placeholder — to be added.
 
 **3. Build & Run**
@@ -353,28 +347,7 @@ Since the frontend will be served from Cloudflare (outside your Docker network),
 > [!IMPORTANT]
 > Enable **Websockets Support** for this proxy host — required for real-time candle streaming.
 
-#### Step 3: Configure Frontend
-
-Before deploying to Cloudflare, update the config files:
-
-**`auth-config.js`** — point `baseUrl` to the **public backend domain** from Step 2:
-
-```js
-window.API_CONFIG = { baseUrl: 'https://api.yourdomain.com' };
-
-const AUTH_CONFIG = {
-    clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
-    // ...
-};
-```
-
-**`login.html`** — add your email to the whitelist:
-
-```js
-const allowedEmails = ['your-email@gmail.com'];
-```
-
-#### Step 4: Deploy to Cloudflare Pages
+#### Step 3: Deploy to Cloudflare Pages
 
 1. Fork or clone this repository to your own GitHub account
 2. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create**
@@ -385,10 +358,21 @@ const allowedEmails = ['your-email@gmail.com'];
 | Setting | Value |
 |---------|-------|
 | Production branch | `main` |
-| Build command | *(leave empty)* |
+| Build command | `sh build.sh` |
 | Build output directory | `frontend` |
 
-6. Click **Save and Deploy**
+6. Add **Environment Variables** (Settings → Environment Variables):
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `API_BASE_URL` | `https://api.yourdomain.com` | Public backend API URL from Step 2 |
+| `GOOGLE_CLIENT_ID` | `YOUR_CLIENT_ID.apps.googleusercontent.com` | Google OAuth Client ID from GCP Console |
+| `ALLOWED_EMAILS` | `alice@gmail.com,bob@gmail.com` | Comma-separated email whitelist |
+
+7. Click **Save and Deploy**
+
+> [!NOTE]
+> The `build.sh` script generates `auth-config.js` from environment variables at build time. No sensitive values are stored in the repository — all credentials are configured via Cloudflare's environment variables dashboard.
 
 Cloudflare will assign a `*.pages.dev` domain. You can add a custom domain in **Pages** → **Custom domains**.
 

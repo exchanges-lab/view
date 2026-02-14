@@ -11,6 +11,7 @@
 ![tv-1](https://img.cathiefish.art/ns/tv-1.png)
 ![tv-2](https://img.cathiefish.art/ns/tv-2.png)
 ![tv-3](https://img.cathiefish.art/ns/tv-3.png)
+![tv-3](https://img.cathiefish.art/ns/tv-4.png)
 
 ## ✨ 功能
 
@@ -226,22 +227,23 @@ docker compose up -d
 
 构建前端容器之前，需要先配置认证和 API 连接。
 
-**1. 配置 Google OAuth — `auth-config.js`**
+**1. 配置 `auth-config.js`**
 
 前端在 Docker 网络内部运行，通过**容器名**访问后端：
 
 ```js
-// 使用后端容器名作为主机名（Docker 内部 DNS）
 window.API_CONFIG = { baseUrl: 'http://backend:3000' };
 
 const AUTH_CONFIG = {
-    // 替换为你从 GCP Console 获取的 Google OAuth Client ID
     clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
     onSuccess: (user) => { console.log('Auth successful:', user.email); },
     onError: (error) => { console.error('Auth error:', error); }
 };
 window.AUTH_CONFIG = AUTH_CONFIG;
+window.ALLOWED_EMAILS = ['your-email@gmail.com'];
 ```
+
+将 `clientId` 替换为你从 GCP Console 获取的 Google OAuth Client ID，将 `ALLOWED_EMAILS` 替换为你的邮箱白名单。
 
 查询后端容器 IP（调试用）：
 
@@ -250,15 +252,7 @@ $ docker inspect backend --format '{{range .NetworkSettings.Networks}}{{.IPAddre
 172.18.0.3
 ```
 
-**2. 配置邮箱白名单 — `login.html`**
-
-将你的 Google 邮箱添加到白名单：
-
-```js
-const allowedEmails = ['your-email@gmail.com'];
-```
-
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Google OAuth 需要从 GCP Console 获取 Client ID。教程待补充。
 
 **3. 构建并运行**
@@ -351,28 +345,7 @@ docker compose up -d
 > [!IMPORTANT]
 > 为此 Proxy Host 启用 **Websockets Support** —— 实时 K 线推送需要 WebSocket。
 
-#### 第三步：配置前端
-
-部署到 Cloudflare 之前，更新配置文件：
-
-**`auth-config.js`** —— 将 `baseUrl` 指向第二步的**公网后端域名**：
-
-```js
-window.API_CONFIG = { baseUrl: 'https://api.yourdomain.com' };
-
-const AUTH_CONFIG = {
-    clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
-    // ...
-};
-```
-
-**`login.html`** —— 添加你的邮箱到白名单：
-
-```js
-const allowedEmails = ['your-email@gmail.com'];
-```
-
-#### 第四步：部署到 Cloudflare Pages
+#### 第三步：部署到 Cloudflare Pages
 
 1. Fork 或 Clone 本仓库到你自己的 GitHub 账号
 2. 进入 [Cloudflare 控制台](https://dash.cloudflare.com/) → **Workers & Pages** → **创建**
@@ -383,10 +356,21 @@ const allowedEmails = ['your-email@gmail.com'];
 | 设置 | 值 |
 |------|---|
 | 生产分支 | `main` |
-| 构建命令 | *（留空）* |
+| 构建命令 | `sh build.sh` |
 | 构建输出目录 | `frontend` |
 
-6. 点击 **保存并部署**
+6. 添加**环境变量**（设置 → 环境变量）：
+
+| 变量 | 值 | 说明 |
+|------|---|------|
+| `API_BASE_URL` | `https://api.yourdomain.com` | 第二步的公网后端 API 地址 |
+| `GOOGLE_CLIENT_ID` | `YOUR_CLIENT_ID.apps.googleusercontent.com` | 从 GCP Console 获取的 Google OAuth Client ID |
+| `ALLOWED_EMAILS` | `alice@gmail.com,bob@gmail.com` | 逗号分隔的邮箱白名单 |
+
+7. 点击 **保存并部署**
+
+> [!NOTE]
+> `build.sh` 脚本会在构建时从环境变量生成 `auth-config.js`。仓库中不存储任何敏感信息 —— 所有凭据通过 Cloudflare 环境变量面板配置。
 
 Cloudflare 会分配一个 `*.pages.dev` 域名。你可以在 **Pages** → **自定义域** 中添加自定义域名。
 
